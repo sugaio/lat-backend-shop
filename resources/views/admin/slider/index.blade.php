@@ -97,7 +97,7 @@
                                             <th scope="row" style="text-align: center">
                                                 {{ ++$no + ($sliders->currentPage() - 1) * $sliders->perPage() }}</th>
                                             <td class="text-center">
-                                                <img src="{{ asset('storage/sliders/' . $slider->image) }}" class="rounded"
+                                                <img src="{{ $slider->image }}" class="rounded"
                                                     style="width:200px">
                                             </td>
                                             <td>{{ $slider->title }}</td>

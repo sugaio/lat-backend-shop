@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 
 class Product extends Model
@@ -18,5 +19,12 @@ class Product extends Model
     public function cart()
     {
         return $this->hasMany(Cart::class);
+    }
+
+    protected function image(): Attribute
+    {
+        return Attribute::make(
+            get: fn($image) => url('/storage/products/'.$image)
+        );
     }
 }
