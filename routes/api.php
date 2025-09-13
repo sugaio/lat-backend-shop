@@ -37,4 +37,4 @@ Route::middleware('auth:sanctum')->group(function() {
 Route::get('/rajaongkir/provinces', [RajaOngkirController::class, 'getProvinces']);
 Route::get('/rajaongkir/cities/{provinceID}', [RajaOngkirController::class, 'getCities']);
 Route::get('/rajaongkir/districts/{cityID}', [RajaOngkirController::class, 'getDistricts']);
-Route::get('/rajaongkir/checkOngkir', [RajaOngkirController::class, 'checkOngkir']);
+Route::post('/rajaongkir/checkOngkir', [RajaOngkirController::class, 'checkOngkir']);

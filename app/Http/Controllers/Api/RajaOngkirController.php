@@ -13,8 +13,7 @@ class RajaOngkirController extends Controller
         // ambil data API raja ongkir
         $response = Http::withHeaders([
             'Accept' => 'application/json',
-            // 'key'    => config('rajaongkir.api_key'),
-            'key' => 'PbzghOjxf1cedc54502074bb8LvF1if6',
+            'key'    => config('rajaongkir.api_key'),
         ])->get('https://rajaongkir.komerce.id/api/v1/destination/province');
 
         return response()->json([
@@ -28,8 +27,7 @@ class RajaOngkirController extends Controller
     {
         $response = Http::withHeaders([
             'Accept' => 'application/json',
-            // 'key'    => config('rajaongkir.api_key'),
-            'key' => 'PbzghOjxf1cedc54502074bb8LvF1if6',
+            'key'    => config('rajaongkir.api_key'),
         ])->get("https://rajaongkir.komerce.id/api/v1/destination/city/{$provinceID}");
 
             return response()->json([
@@ -43,8 +41,7 @@ class RajaOngkirController extends Controller
     {
         $response = Http::withHeaders([
             'Accept' => 'application/json',
-            // 'key'    => config('rajaongkir.api_key'),
-            'key' => 'PbzghOjxf1cedc54502074bb8LvF1if6',
+            'key'    => config('rajaongkir.api_key'),
         ])->get("https://rajaongkir.komerce.id/api/v1/destination/district/{$cityID}");
 
             return response()->json([
@@ -56,15 +53,6 @@ class RajaOngkirController extends Controller
 
     public function checkOngkir(Request $request)
     {
-        // $response = Http::asForm()->withHeaders([
-        //     'Accept' => 'application/json',
-        //     'key' => 'PbzghOjxf1cedc54502074bb8LvF1if6',
-        // ])->post('https://rajaongkir.komerce.id/api/v1/calculate/district/domestic-cost', [
-        //     'origin' => 2609, // Banguntapan
-        //     'destination' => $request->district_id,
-        //     'weight' => $request->weight,
-        //     'courier' => $request->courier,
-        // ]);
         $response = Http::asForm()->withHeaders([
             'Accept' => 'application/json',
             'key' => config('rajaongkir.api_key'),
@@ -78,7 +66,7 @@ class RajaOngkirController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'List Ongkir',
-            'data' => $response->json()['data'],
+            'data' => $response->json()['data'] ?? [],
         ]);
     }
 }
