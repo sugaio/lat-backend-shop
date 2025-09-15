@@ -26,28 +26,33 @@ class CartController extends Controller
     {
         $request->validate([
             'product_id' => 'required|exists:products,id',
-            'customer_id' => 'required|exists:customers,id',
             'quantity' => 'required|integer|min:1',
-            'price' => 'required|integer'
         ]);
 
         $product = Product::findOrFail($request->product_id);
         // dd($product);
-        $cartItem = Cart::where('product_id', $product->id)->where('customer_id', $request->customer_id)->first();
+        $userId = Auth::user()->id;
+
+        $finalPrice = $product->price;
+        if ($product->discount > 0) {
+            $finalPrice = $product->price - ($product->price * $product->discount / 100);
+        }
+
+        $cartItem = Cart::where('product_id', $product->id)->where('customer_id', $userId)->first();
 
         if($cartItem) {
             $cartItem->increment('qty', $request->quantity ?? 1);
 
             $cartItem->update([
-                'price' => $request->price * $cartItem->qty,
+                'price' => $finalPrice * $cartItem->qty,
                 'weight' => $product->weight * $cartItem->qty
             ]);
         } else {
             $cartItem = Cart::create([
                 'product_id' => $product->id,
-                'customer_id' => $request->customer_id,
+                'customer_id' => $userId,
                 'qty' => $request->quantity ?? 1,
-                'price' => $request->price * ($request->quantity ?? 1),
+                'price' => $finalPrice * ($request->quantity ?? 1),
                 'weight' => $product->weight * ($request->quantity ?? 1),
             ]);
         }
@@ -55,8 +60,7 @@ class CartController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Success Add to Cart',
-            'quantity' => $cartItem->qty,
-            'product' => $cartItem->product,
+            'cart' => $cartItem,
         ]);
     }
 
