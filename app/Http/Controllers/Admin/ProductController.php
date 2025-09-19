@@ -54,7 +54,7 @@ class ProductController extends Controller
         ]);
 
         $image = $request->file('image');
-        $image->storeAs('categories', $image->hashName(), 'public');
+        $image->storeAs('products', $image->hashName(), 'public');
 
         $product = Product::create([
             'image' => $image->hashName(),
