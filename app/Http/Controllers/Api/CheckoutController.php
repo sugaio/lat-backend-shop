@@ -28,7 +28,7 @@ class CheckoutController extends Controller
     public function store()
     {
         $snapToken = DB::transaction(function () {
-            
+
             // buat nomor invoice
             $lenght = 10;
             $random = '';
@@ -44,7 +44,7 @@ class CheckoutController extends Controller
                 'invoice' => $no_invoice,
                 'customer_id' => Auth::user()->id,
                 'courier' => $this->request->courier,
-                'services' => $this->request->service,
+                'service' => $this->request->service,
                 'cost_courier' => $this->request->cost_courier,
                 'weight' => $total_weight,
                 'name' => $this->request->name,
@@ -64,11 +64,11 @@ class CheckoutController extends Controller
                     'product_id' => $cart->product_id,
                     'product_name' => $cart->product->title,
                     'image' => $cart->product->image,
-                    'qty' => $cart->quantity,
+                    'qty' => $cart->qty,
                     'price' => $cart->price
                 ];
 
-                $cart->product->decrement('stock', $cart->quantity);
+                $cart->product->decrement('stock', $cart->qty);
             }
 
             $invoice->orders()->createMany($orders);
@@ -88,7 +88,7 @@ class CheckoutController extends Controller
                     'shipping_address' => $invoice->address,
                 ]
             ];
-            
+
             // send request snap token ke midtrans
             $snapTokenResult = Snap::getSnapToken($payload);
             $invoice->snap_token = $snapTokenResult;
@@ -107,7 +107,7 @@ class CheckoutController extends Controller
     public function notificationHandler(Request $request)
     {
         $payload = $request->getContent(); // midtrans mengirimkan data dalam format JSON
-        $notification = json_decode($payload); 
+        $notification = json_decode($payload);
 
         $validSignatureKey = hash("sha512", $notification->order_id, $notification->status_code . $notification->gross_amount . config('services.midtrans.serverKey'));
 
