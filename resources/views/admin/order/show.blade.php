@@ -94,7 +94,7 @@
                                     <tr style="background: #edf2f7;">
                                         <td class="b-none" width="25%">
                                             <div class="wrapper-image-cart">
-                                                <img src="{{ 'http://test-backend-shop.test/storage/products/' . $product->image }}"
+                                                <img src="{{ $product->image }}"
                                                     style="width: 100%;border-radius: .5rem">
                                             </div>
                                         </td>
