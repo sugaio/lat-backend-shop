@@ -41,7 +41,7 @@ Route::middleware('auth:sanctum')->group(function() {
     Route::get('/order/{snap_token?}', [OrderController::class, 'show']);
 });
 
-Route::post('/notificationHandler', [CheckoutController::class, 'notifcationHandler']);
+Route::post('/notificationHandler', [CheckoutController::class, 'notificationHandler']);
 
 Route::get('/rajaongkir/provinces', [RajaOngkirController::class, 'getProvinces']);
 Route::get('/rajaongkir/cities/{provinceID}', [RajaOngkirController::class, 'getCities']);

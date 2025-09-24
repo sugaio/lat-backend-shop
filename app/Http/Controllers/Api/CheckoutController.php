@@ -18,58 +18,61 @@ class CheckoutController extends Controller
     public function __construct(Request $request)
     {
         $this->request = $request;
-        // Set config midtrains
-        \Midtrans\Config::$serverKey    = config('services.midtrans.serverKey');
+
+        // set config midtrans
+        \Midtrans\Config::$serverKey = config('services.midtrans.serverKey');
         \Midtrans\Config::$isProduction = config('services.midtrans.isProduction');
-        \Midtrans\Config::$isSanitized  = config('services.midtrans.isSanitized');
-        \Midtrans\Config::$is3ds        = config('services.midtrans.is3ds');
+        \Midtrans\Config::$isSanitized = config('services.midtrans.isSanitized');
+        \Midtrans\Config::$is3ds = config('services.midtrans.is3ds');
     }
 
     public function store()
     {
         $snapToken = DB::transaction(function () {
-            // no invoice
+
+            // Buat nomor invoice
             $length = 10;
             $random = '';
             for ($i = 0; $i < $length; $i++) {
                 $random .= rand(0, 1) ? rand(0, 9) : chr(rand(ord('a'), ord('z')));
             }
 
-            $no_invoice = 'INV-' . Str::upper($random);
+            $no_invoice = 'INV-' . Str::upper($random); // INV-A92K8V23WE
 
-            $total_weight   = Cart::where('customer_id', Auth::user()->id)->sum('weight');
-            $total_cart     = Cart::where('customer_id', Auth::user()->id)->sum('price');
+            $total_weight = Cart::where('customer_id', Auth::user()->id)->sum('weight');
+            $total_cart = Cart::where('customer_id', Auth::user()->id)->sum('price');
 
             $invoice = Invoice::create([
-                'invoice'       => $no_invoice,
-                'customer_id'   => Auth::user()->id,
-                'courier'       => $this->request->courier,
-                'service'       => $this->request->service,
-                'cost_courier'  => $this->request->cost_courier,
-                'weight'        => $total_weight,
-                'name'          => $this->request->name,
-                'phone'         => $this->request->phone,
-                'address'       => $this->request->address,
-                'grand_total'   => $total_cart + $this->request->cost_courier,
-                'Status'        => 'pending'
+                'invoice' => $no_invoice,
+                'customer_id' => Auth::user()->id,
+                'courier' => $this->request->courier,
+                'service' => $this->request->service,
+                'cost_courier' => $this->request->cost_courier,
+                'weight' => $total_weight,
+                'name' => $this->request->name,
+                'phone' => $this->request->phone,
+                'address' => $this->request->address,
+                'grand_total' => $total_cart + $this->request->cost_courier,
+                'status' => 'pending',
             ]);
 
-            // insert data cart ke order
+            // Insert data cart ke order
             $carts = Cart::with('product')->where('customer_id', Auth::user()->id)->get();
             $orders = [];
             foreach ($carts as $cart) {
                 $orders[] = [
-                    'invoice_id'    => $invoice->id,
-                    'invoice'       => $invoice->invoice,
-                    'product_id'    => $cart->product_id,
-                    'product_name'  => $cart->product->title,
-                    'image'         => $cart->product->image,
-                    'qty'           => $cart->quantity,
-                    'price'         => $cart->price,
+                    'invoice_id' => $invoice->id,
+                    'invoice' => $invoice->invoice,
+                    'product_id' => $cart->product_id,
+                    'product_name' => $cart->product->title,
+                    'image' => $cart->product->image,
+                    'qty' => $cart->qty,
+                    'price' => $cart->price,
                 ];
 
-                $cart->product->decrement('stock', $cart->quantity);
+                $cart->product->decrement('stock', $cart->qty);
             }
+
             $invoice->orders()->createMany($orders);
 
             Cart::where('customer_id', Auth::user()->id)->delete();
@@ -77,19 +80,19 @@ class CheckoutController extends Controller
             // Menyimpan data untuk membuat transaksi ke midtrans
             $payload = [
                 'transaction_details' => [
-                    'order_id'     => $invoice->invoice,
+                    'order_id' => $invoice->invoice,
                     'gross_amount' => $invoice->grand_total,
                 ],
                 'customer_details' => [
                     'first_name' => $invoice->name,
-                    'email'      => Auth::user()->email,
-                    'phone'      => $invoice->phone,
+                    'email' => Auth::user()->email,
+                    'phone' => $invoice->phone,
                     'shipping_address' => $invoice->address,
                 ]
             ];
 
-            // send request snap token
-            $snapTokenResult     = Snap::getSnapToken($payload);
+            // Send request snap token ke midtrans
+            $snapTokenResult = Snap::getSnapToken($payload);
             $invoice->snap_token = $snapTokenResult;
             $invoice->save();
 
@@ -97,21 +100,21 @@ class CheckoutController extends Controller
         });
 
         return response()->json([
-            'success'    => true,
-            'message'    => 'Checkout Sukses',
-            'snap_token' => $snapToken
+            'success' => true,
+            'message' => 'Checkout Successfully!',
+            'snap_token' => $snapToken,
         ], 200);
     }
 
     public function notificationHandler(Request $request)
     {
-        $payload = $request->getContent(); //Midtrans kirim data dalam format JSON
+        $payload = $request->getContent(); // Midtrans mengirimkan data dalam format JSON
         $notification = json_decode($payload);
 
-        $validSignatureKey = hash("sha512", $notification->order_id . $notification->status_code . $notification->gross_amount . config('services.midtrans.serverKey'));
+        $validSignatureKey = hash("sha512", $notification->order_id. $notification->status_code . $notification->gross_amount . config('services.midtrans.serverKey'));
 
         if ($notification->signature_key != $validSignatureKey) {
-            return response(['message' => 'invalid signature'], 403);
+            return response(['message' => 'Invalid Signature'], 403);
         }
 
         $transaction = $notification->transaction_status;
@@ -124,36 +127,36 @@ class CheckoutController extends Controller
         if ($transaction == 'capture') {
             if ($type == 'credit_card') {
                 if ($fraud == 'challenge') {
-                    // System midtrans mendeteksi penipuan
+                    // sistem midtrans mendeteksi penipuan
                     $data_transaction->update([
-                        'Status' => 'pending'
+                        'status' => 'pending'
                     ]);
                 } else {
                     $data_transaction->update([
-                        'Status' => 'success'
+                        'status' => 'success',
                     ]);
                 }
             }
         } elseif ($transaction == 'settlement') {
-            // untuk metode pembayaran melalui transfer VA atau e-wallet
+            // untuk metode pembayaran melalui transfer, va, atau e-wallet
             $data_transaction->update([
-                'Status' => 'success'
+                'status' => 'success'
             ]);
         } elseif ($transaction == 'pending') {
             $data_transaction->update([
-                'Status' => 'pending'
+                'status' => 'pending'
             ]);
         } elseif ($transaction == 'deny') {
             $data_transaction->update([
-                'Status' => 'failed'
+                'status' => 'failed'
             ]);
-        } elseif ($transaction == 'expired') {
+        } elseif ($transaction == 'expire') {
             $data_transaction->update([
-                'Status' => 'expired'
+                'status' => 'expired'
             ]);
         } elseif ($transaction == 'cancel') {
             $data_transaction->update([
-                'Status' => 'failed'
+                'status' => 'failed'
             ]);
         }
     }
